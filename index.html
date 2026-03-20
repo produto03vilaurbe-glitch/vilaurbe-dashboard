@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vilaurbe · Intelligence Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --red:#cc1f1f; --red-dark:#a31717; --red-light:#e84040;
+      --red-ghost:#fff5f5; --red-pale:#fdeaea;
+      --black:#0f0f0f; --black-soft:#1a1a1a; --black-mid:#2b2b2b;
+      --charcoal:#3d3d3d; --gray-dark:#5a5a5a; --gray-mid:#8a8a8a;
+      --gray-ghost:#f4f4f4; --off-white:#f9f9f9; --white:#fff; --border:#e4e4e4;
+      --shadow-sm:0 2px 8px rgba(0,0,0,.07); --shadow-md:0 6px 24px rgba(0,0,0,.10);
+      --r-sm:6px; --r-md:12px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:'Inter',system-ui,sans-serif;background:var(--off-white);color:var(--black);min-height:100vh}
+
+    .topbar{background:var(--black);height:62px;padding:0 2.5rem;display:flex;align-items:center;
+      justify-content:space-between;position:sticky;top:0;z-index:100;border-bottom:3px solid var(--red)}
+    .brand{display:flex;align-items:center;gap:.9rem}
+    .bmark{width:36px;height:36px;border-radius:4px;background:var(--red);display:flex;align-items:center;
+      justify-content:center;font-family:'Montserrat',sans-serif;font-size:.95rem;font-weight:800;color:#fff}
+    .bname{font-family:'Montserrat',sans-serif;font-size:1.1rem;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.05em}
+    .bsub{font-size:.6rem;color:var(--gray-mid);letter-spacing:.1em;text-transform:uppercase;margin-top:-2px}
+    .topbar-r{display:flex;align-items:center;gap:1.2rem}
+    .lupd{font-size:.72rem;color:var(--gray-mid)}
+    #upd-t{color:var(--red-light);font-weight:600}
+    .btn-ref{display:flex;align-items:center;gap:.45rem;padding:.45rem 1.1rem;background:var(--red);
+      color:#fff;border:none;border-radius:var(--r-sm);font-family:'Montserrat',sans-serif;font-size:.75rem;
+      font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.05em;
+      transition:background .2s,transform .15s}
+    .btn-ref:hover{background:var(--red-dark);transform:translateY(-1px)}
+    .btn-ref:disabled{opacity:.6;cursor:not-allowed;transform:none}
+    .btn-ref.spin svg{animation:rot .8s linear infinite}
+    @keyframes rot{to{transform:rotate(360deg)}}
+
+    .hero{background:var(--black-soft);padding:1.8rem 2.5rem;display:flex;align-items:flex-end;
+      justify-content:space-between;gap:1rem;border-bottom:1px solid var(--black-mid)}
+    .htitle{font-family:'Montserrat',sans-serif;font-size:1.6rem;font-weight:800;color:#fff;text-transform:uppercase}
+    .htitle span{color:var(--red)}
+    .hsub{font-size:.72rem;color:var(--gray-mid);margin-top:.4rem;text-transform:uppercase;letter-spacing:.05em}
+    .hbadge{background:var(--red);border-radius:3px;padding:.35rem 1rem;font-size:.65rem;
+      font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.12em;white-space:nowrap}
+
+    .main{padding:2rem 2.5rem 3rem;max-width:1600px;margin:0 auto}
+
+    .state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5rem 2rem;gap:1rem;text-align:center}
+    .sico{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.8rem}
+    .sico.ld{background:var(--gray-ghost);animation:pulse 1.5s ease-in-out infinite}
+    .sico.er{background:var(--red-pale)}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .stitle{font-family:'Montserrat',sans-serif;font-size:1.1rem;font-weight:700}
+    .sdesc{font-size:.82rem;color:var(--gray-dark);max-width:560px;line-height:1.8;white-space:pre-wrap}
+    .pbwrap{width:260px;height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+    .pb{height:100%;background:var(--red);border-radius:2px;transition:width .4s ease}
+    .btn-alt{margin-top:.5rem;padding:.55rem 1.2rem;background:var(--gray-ghost);border:1px solid var(--border);
+      border-radius:var(--r-sm);font-family:'Montserrat',sans-serif;font-size:.72rem;font-weight:700;
+      color:var(--charcoal);cursor:pointer;text-transform:uppercase;transition:background .2s}
+    .btn-alt:hover{background:var(--border)}
+
+    .fbar{background:var(--white);border:1px solid var(--border);border-radius:var(--r-md);
+      padding:1.2rem 1.5rem;margin-bottom:1.8rem;box-shadow:var(--shadow-sm)}
+    .flbl{font-size:.65rem;font-weight:700;color:var(--gray-mid);letter-spacing:.12em;text-transform:uppercase;
+      margin-bottom:.9rem;display:flex;align-items:center;gap:.5rem}
+    .flbl::before{content:'';width:3px;height:14px;background:var(--red);border-radius:2px}
+    .frow{display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end}
+    .fg{display:flex;flex-direction:column;gap:.3rem;min-width:155px;flex:1}
+    .fg label{font-size:.67rem;font-weight:600;color:var(--charcoal);text-transform:uppercase;letter-spacing:.06em}
+    select{padding:.5rem .8rem;border:1px solid var(--border);border-radius:var(--r-sm);
+      font-family:'Inter',sans-serif;font-size:.82rem;color:var(--black);background:var(--white);
+      cursor:pointer;outline:none;transition:border-color .2s}
+    select:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(204,31,31,.08)}
+    .rw{display:flex;align-items:center;gap:.5rem}
+    input[type="range"]{accent-color:var(--red);flex:1;cursor:pointer}
+    .rv{font-size:.72rem;font-weight:700;color:var(--red);white-space:nowrap;min-width:68px;text-align:right}
+    .btn-clr{padding:.5rem 1rem;background:var(--gray-ghost);border:1px solid var(--border);
+      border-radius:var(--r-sm);font-family:'Montserrat',sans-serif;font-size:.7rem;font-weight:700;
+      color:var(--charcoal);cursor:pointer;text-transform:uppercase;letter-spacing:.04em;
+      transition:background .2s;white-space:nowrap;align-self:flex-end}
+    .btn-clr:hover{background:var(--border)}
+
+    .sec{font-family:'Montserrat',sans-serif;font-size:.7rem;font-weight:800;color:var(--gray-dark);
+      letter-spacing:.14em;text-transform:uppercase;margin-bottom:1rem;display:flex;align-items:center;gap:.7rem}
+    .sec::before{content:'';width:4px;height:16px;background:var(--red);border-radius:2px;flex-shrink:0}
+    .sec::after{content:'';flex:1;height:1px;background:var(--border)}
+
+    .kgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:1rem;margin-bottom:2rem}
+    .kpi{background:var(--white);border:1px solid var(--border);border-radius:var(--r-md);
+      padding:1.3rem 1.3rem 1.1rem;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;
+      transition:transform .2s,box-shadow .2s}
+    .kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+    .kpi::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--red)}
+    .kico{width:32px;height:32px;border-radius:6px;background:var(--red-ghost);display:flex;
+      align-items:center;justify-content:center;font-size:.95rem;margin-bottom:.8rem}
+    .kval{font-family:'Montserrat',sans-serif;font-size:2rem;font-weight:800;color:var(--black);line-height:1}
+    .klbl{font-size:.67rem;font-weight:600;color:var(--gray-mid);text-transform:uppercase;letter-spacing:.07em;margin-top:.4rem}
+
+    .cg{display:grid;grid-template-columns:repeat(2,1fr);gap:1.2rem;margin-bottom:1.4rem}
+    .cg.t3{grid-template-columns:repeat(3,1fr)}
+    @media(max-width:1100px){.cg,.cg.t3{grid-template-columns:1fr}}
+    .cc{background:var(--white);border:1px solid var(--border);border-radius:var(--r-md);
+      padding:1.4rem 1.5rem;box-shadow:var(--shadow-sm);transition:box-shadow .2s}
+    .cc:hover{box-shadow:var(--shadow-md)}
+    .ch{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.2rem}
+    .ct{font-family:'Montserrat',sans-serif;font-size:.88rem;font-weight:700;color:var(--black);text-transform:uppercase;letter-spacing:.02em}
+    .cs{font-size:.7rem;color:var(--gray-mid);margin-top:.2rem}
+    .cbg{background:var(--black);color:#fff;font-size:.6rem;font-weight:700;letter-spacing:.08em;
+      text-transform:uppercase;padding:.2rem .6rem;border-radius:3px;white-space:nowrap}
+
+    .igrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:1rem;margin-bottom:2rem}
+    .ic{background:var(--white);border:1px solid var(--border);border-left:4px solid var(--red);
+      border-radius:var(--r-md);padding:1.2rem 1.3rem;box-shadow:var(--shadow-sm);
+      display:flex;gap:.9rem;transition:transform .2s,box-shadow .2s}
+    .ic:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+    .ii{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;
+      justify-content:center;font-size:1.1rem;flex-shrink:0;background:var(--red-ghost)}
+    .ii.dk{background:var(--gray-ghost)}
+    .ik{font-size:.6rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:.2rem}
+    .it{font-family:'Montserrat',sans-serif;font-size:.9rem;font-weight:700;color:var(--black);line-height:1.2}
+    .ib{font-size:.76rem;color:var(--charcoal);margin-top:.3rem;line-height:1.55}
+
+    .tcard{background:var(--white);border:1px solid var(--border);border-radius:var(--r-md);
+      box-shadow:var(--shadow-sm);overflow:hidden;margin-bottom:2rem}
+    .ttop{padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;
+      border-bottom:1px solid var(--border);background:var(--black)}
+    .ttitle{font-family:'Montserrat',sans-serif;font-size:.75rem;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.1em}
+    .tcnt{font-size:.7rem;color:var(--gray-mid)}
+    .twrap{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:.77rem}
+    thead tr{background:var(--gray-ghost)}
+    thead th{padding:.7rem 1rem;text-align:left;font-size:.62rem;font-weight:700;letter-spacing:.08em;
+      text-transform:uppercase;color:var(--charcoal);white-space:nowrap;border-bottom:2px solid var(--border)}
+    tbody tr{border-bottom:1px solid var(--border);transition:background .12s}
+    tbody tr:last-child{border-bottom:none}
+    tbody tr:hover{background:var(--red-ghost)}
+    td{padding:.65rem 1rem;color:var(--black);white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+    td.lk a{color:var(--red);text-decoration:none;font-weight:600;font-size:.75rem}
+    td.lk a:hover{text-decoration:underline}
+    .tag{display:inline-block;padding:.18rem .5rem;border-radius:3px;font-size:.62rem;font-weight:700;text-transform:uppercase}
+    .ty{background:#fee2e2;color:var(--red-dark)}
+    .tn{background:var(--gray-ghost);color:var(--gray-mid)}
+
+    .footer{background:var(--black);color:var(--gray-mid);text-align:center;padding:1.2rem;
+      font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;border-top:3px solid var(--red)}
+    .footer span{color:var(--red-light)}
+    .hidden{display:none!important}
+
+    /* ── MOBILE (até 768px) ── */
+    @media(max-width:768px){
+      .topbar{padding:0 1rem;height:56px}
+      .bname{font-size:.95rem}
+      .bsub{display:none}
+      .topbar-r .lupd{display:none}
+      .btn-ref span{display:none}
+      .hero{padding:1.2rem 1rem;flex-direction:column;align-items:flex-start;gap:.6rem}
+      .htitle{font-size:1.2rem}
+      .hbadge{display:none}
+      .main{padding:1rem 1rem 2rem}
+      .fbar{padding:1rem}
+      .frow{flex-direction:column}
+      .fg{min-width:100%}
+      .kgrid{grid-template-columns:repeat(2,1fr);gap:.75rem}
+      .kval{font-size:1.6rem}
+      .cg,.cg.t3{grid-template-columns:1fr}
+      .cc{padding:1rem}
+      .igrid{grid-template-columns:1fr}
+      .tcard{font-size:.72rem}
+      thead th{padding:.5rem .7rem;font-size:.58rem}
+      td{padding:.5rem .7rem;font-size:.72rem}
+      .sec{font-size:.65rem}
+    }
+    /* ── TABLET (até 1024px) ── */
+    @media(max-width:1024px) and (min-width:769px){
+      .topbar{padding:0 1.5rem}
+      .main{padding:1.5rem 1.5rem 2.5rem}
+      .kgrid{grid-template-columns:repeat(4,1fr)}
+      .cg{grid-template-columns:1fr}
+      .cg.t3{grid-template-columns:1fr}
+      .hero{padding:1.5rem}
+    }
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="bmark">V</div>
+    <div>
+      <div class="bname">Vilaurbe</div>
+      <div class="bsub">Intelligence Dashboard</div>
+    </div>
+  </div>
+  <div class="topbar-r">
+    <div class="lupd">Última atualização: <span id="upd-t">—</span></div>
+    <button class="btn-ref" id="btn-ref" onclick="loadData()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+        <path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+      </svg>
+      Atualizar Dados
+    </button>
+  </div>
+</header>
+
+<div class="hero">
+  <div>
+    <div class="htitle">Análise de <span>Concorrentes</span></div>
+    <div class="hsub">Inteligência Competitiva · Mercado Imobiliário Regional</div>
+  </div>
+  <div class="hbadge">Uso Executivo</div>
+</div>
+
+<main class="main">
+
+  <div id="st-ld" class="state">
+    <div class="sico ld">📊</div>
+    <div class="stitle">Carregando dados…</div>
+    <div class="sdesc" id="ld-msg">Conectando ao Apps Script…</div>
+    <div class="pbwrap"><div class="pb" id="pb" style="width:10%"></div></div>
+  </div>
+
+  <div id="st-er" class="state hidden">
+    <div class="sico er">⚠️</div>
+    <div class="stitle">Erro ao carregar os dados</div>
+    <div class="sdesc" id="er-msg">—</div>
+    <button class="btn-alt" onclick="loadData()">↺ Tentar novamente</button>
+  </div>
+
+  <div id="dash" class="hidden">
+
+    <div class="fbar">
+      <div class="flbl">Filtros Interativos</div>
+      <div class="frow">
+        <div class="fg"><label>Construtora</label>
+          <select id="f-con"><option value="">Todas</option></select></div>
+        <div class="fg"><label>Empreendimento</label>
+          <select id="f-emp"><option value="">Todos</option></select></div>
+        <div class="fg"><label>Cidade</label>
+          <select id="f-cid"><option value="">Todas</option></select></div>
+        <div class="fg">
+          <label>Área privativa mínima (m²)</label>
+          <div class="rw">
+            <input type="range" id="r-mn" min="0" max="300" value="0" step="5"
+                   oninput="rl('r-mn','v-mn');applyF()">
+            <span class="rv" id="v-mn">0 m²</span>
+          </div>
+        </div>
+        <div class="fg">
+          <label>Área privativa máxima (m²)</label>
+          <div class="rw">
+            <input type="range" id="r-mx" min="0" max="300" value="300" step="5"
+                   oninput="rl('r-mx','v-mx');applyF()">
+            <span class="rv" id="v-mx">300 m²</span>
+          </div>
+        </div>
+        <button class="btn-clr" onclick="clearF()">✕ Limpar</button>
+      </div>
+    </div>
+
+    <div class="sec">KPIs Estratégicos</div>
+    <div class="kgrid" id="kgrid"></div>
+
+    <div class="sec">Distribuição de Mercado</div>
+    <div class="cg">
+      <div class="cc">
+        <div class="ch"><div><div class="ct">Empreendimentos por Construtora</div><div class="cs">Ranking de presença na amostra</div></div><div class="cbg">Ranking</div></div>
+        <div style="height:300px;position:relative"><canvas id="c-con"></canvas></div>
+      </div>
+      <div class="cc">
+        <div class="ch"><div><div class="ct">Empreendimentos por Cidade</div><div class="cs">Volume de análises por praça</div></div><div class="cbg">Cidades</div></div>
+        <div style="height:300px;position:relative"><canvas id="c-cid"></canvas></div>
+      </div>
+    </div>
+
+    <div class="cg t3">
+      <div class="cc">
+        <div class="ch"><div><div class="ct">Porte dos Empreendimentos</div><div class="cs">Faixas por total de unidades</div></div><div class="cbg">Segmentos</div></div>
+        <div style="height:280px;position:relative"><canvas id="c-prt"></canvas></div>
+      </div>
+      <div class="cc">
+        <div class="ch"><div><div class="ct">Média de Ítens de Lazer</div><div class="cs">Por construtora</div></div><div class="cbg">Lazer</div></div>
+        <div style="height:280px;position:relative"><canvas id="c-laz"></canvas></div>
+      </div>
+      <div class="cc">
+        <div class="ch"><div><div class="ct">Pavimentos × Unidades</div><div class="cs">Densidade vertical dos empreendimentos</div></div><div class="cbg">Densidade</div></div>
+        <div style="height:280px;position:relative"><canvas id="c-sct"></canvas></div>
+      </div>
+    </div>
+
+    <div class="cg">
+      <div class="cc">
+        <div class="ch"><div><div class="ct">Média de Tipologias / Empreendimento</div><div class="cs">Variedade de planta por construtora</div></div><div class="cbg">Tipologia</div></div>
+        <div style="height:280px;position:relative"><canvas id="c-tip"></canvas></div>
+      </div>
+      <div class="cc">
+        <div class="ch"><div><div class="ct">Média de Unidades / Empreendimento</div><div class="cs">Escala produtiva por construtora</div></div><div class="cbg">Escala</div></div>
+        <div style="height:280px;position:relative"><canvas id="c-uni"></canvas></div>
+      </div>
+    </div>
+
+    <div class="sec">Insights Estratégicos</div>
+    <div class="igrid" id="igrid"></div>
+
+    <div class="tcard">
+      <div class="ttop">
+        <div class="ttitle">Empreendimentos Analisados</div>
+        <div class="tcnt" id="tcnt">— registros</div>
+      </div>
+      <div class="twrap">
+        <table>
+          <thead><tr>
+            <th>Construtora</th><th>Empreendimento</th><th>Cidade/UF</th>
+            <th>Dorms.</th><th>Suítes</th><th>Vagas</th><th>Garden</th>
+            <th>Área priv. (m²)</th><th>Unidades</th><th>Torres</th><th>Pav.</th>
+            <th>Elevador</th><th>Tipol.</th><th>Ítens Lazer</th><th>Linha</th><th>Link</th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer class="footer">
+  Vilaurbe Construtora &amp; Incorporadora &nbsp;·&nbsp;
+  <span>Dashboard de Inteligência Competitiva</span>
+  &nbsp;·&nbsp; Dados via Google Apps Script
+</footer>
+
+<script>
+// ══════════════════════════════════════════════════════
+// ► APPS SCRIPT URL — altere aqui se reimplantar
+// ══════════════════════════════════════════════════════
+var APPS_URL = "https://script.google.com/macros/s/AKfycbxRh4sIzhrj0Z-H9BFKh-lkBlzppTX-EzHDBVk6-PU__ixmtnCw5GcDPLwHGPc2K7mD/exec";
+
+// ══════════════════════════════════════════════════════
+// NOMES EXATOS DAS COLUNAS (confirmados via diagnóstico)
+// ══════════════════════════════════════════════════════
+var C = {
+  construtora:       "Construtora",
+  empreendimento:    "Empreendimento",
+  cidade:            "Cidade",
+  estado:            "Estado",
+  dorm_min:          "Dormitórios mín",
+  dorm_max:          "Dormitórios máx",
+  suites:            "Suítes (0-1)",
+  banheiros:         "Banheiros mín",
+  vagas:             "Vagas (0-1)",
+  varanda:           "Varanda (0-1)",
+  garden:            "Garden privativo (0-1)",
+  area_min:          "Área privativa mín (m²)",
+  area_max:          "Área privativa máx (m²)",
+  area_terreno:      "Área do terreno (m²)",
+  torres:            "Nº de torres",
+  pavimentos:        "Pavimentos",
+  total_unidades:    "Total de unidades",
+  tipologias:        "Nº de tipologias (plantas)",
+  elevadores:        "Elevador (0-1)",
+  itens_lazer_lista: "Itens de lazer diferenciados (lista)",
+  itens_lazer_num:   "Nº itens de lazer",
+  linha_produto:     "Linha de produto",
+  link:              "Link",
+  avaliacao:         "Avaliação"
+};
+
+var CR = {}, RAW = [], FIL = [];
+var CR_REDS   = ['#cc1f1f','#e84040','#a31717','#f07070','#7a0f0f','#f9a0a0','#fdd0d0'];
+var CR_BLACKS = ['#0f0f0f','#2b2b2b','#3d3d3d','#5a5a5a','#8a8a8a','#b0b0b0','#d0d0d0'];
+var CR_MIXED  = ['#cc1f1f','#1a1a1a','#e84040','#3d3d3d','#f07070','#5a5a5a','#a31717','#8a8a8a'];
+
+// ══════════════════════════════════════════════════════
+// PARSE DE LINHA
+// ══════════════════════════════════════════════════════
+function parseRow(raw) {
+  function g(col) {
+    var v = raw[col];
+    return (v !== undefined && v !== null) ? String(v).trim() : '';
+  }
+  function toNum(col) {
+    var v = g(col);
+    if (!v || v === '-' || v === '—') return null;
+    // Trata tanto número JS puro quanto string com vírgula decimal
+    var s = String(v).replace(/\s/g,'').replace(/\./g,'').replace(',','.');
+    var n = parseFloat(s);
+    return isNaN(n) ? null : n;
+  }
+  function toFlag(col) {
+    var v = g(col);
+    if (!v || v === '-') return false;
+    var n = parseFloat(v);
+    if (!isNaN(n)) return n >= 1;
+    return v.toLowerCase() === 'sim' || v.toLowerCase() === 'true';
+  }
+  return {
+    construtora:       g(C.construtora)    || '(sem nome)',
+    empreendimento:    g(C.empreendimento) || '(sem nome)',
+    cidade:            g(C.cidade),
+    estado:            g(C.estado),
+    dorm_min:          toNum(C.dorm_min),
+    dorm_max:          toNum(C.dorm_max),
+    suites:            toFlag(C.suites),
+    banheiros:         toNum(C.banheiros),
+    vagas:             toFlag(C.vagas),
+    varanda:           toFlag(C.varanda),
+    garden:            toFlag(C.garden),
+    area_min:          toNum(C.area_min),
+    area_max:          toNum(C.area_max),
+    area_terreno:      toNum(C.area_terreno),
+    torres:            toNum(C.torres),
+    pavimentos:        toNum(C.pavimentos),
+    total_unidades:    toNum(C.total_unidades),
+    tipologias:        toNum(C.tipologias),
+    elevadores:        toFlag(C.elevadores),
+    itens_lazer_lista: g(C.itens_lazer_lista),
+    itens_lazer_num:   toNum(C.itens_lazer_num),
+    linha_produto:     g(C.linha_produto),
+    link:              g(C.link),
+    avaliacao:         g(C.avaliacao)
+  };
+}
+
+// ══════════════════════════════════════════════════════
+// LOAD DATA
+// ══════════════════════════════════════════════════════
+function loadData() {
+  var btn = document.getElementById('btn-ref');
+  btn.classList.add('spin'); btn.disabled = true;
+  showState('load'); prog(10, 'Conectando…');
+
+  fetch(APPS_URL + '?_t=' + Date.now(), { cache: 'no-store' })
+    .then(function(res) {
+      prog(50, 'Dados recebidos, processando…');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    })
+    .then(function(json) {
+      prog(80, 'Montando dashboard…');
+      var rows = json.data || [];
+      if (!rows.length) throw new Error('Planilha sem dados.');
+
+      RAW = rows.map(parseRow).filter(function(r) {
+        return r.construtora !== '(sem nome)' || r.empreendimento !== '(sem nome)';
+      });
+      if (!RAW.length) throw new Error('Nenhuma linha válida encontrada.');
+
+      FIL = RAW.slice();
+      var now = new Date();
+      document.getElementById('upd-t').textContent =
+        now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) + ' · ' +
+        now.toLocaleDateString('pt-BR');
+
+      populateF(); adjustRange(); renderAll();
+      prog(100,''); showState('dash');
+    })
+    .catch(function(err) {
+      showState('err', err.message + '\n\nCertifique-se de que o Apps Script está implantado como "Qualquer pessoa".');
+    })
+    .finally(function() {
+      btn.classList.remove('spin'); btn.disabled = false;
+    });
+}
+
+function prog(p, m) {
+  document.getElementById('pb').style.width = p + '%';
+  if (m) document.getElementById('ld-msg').textContent = m;
+}
+function showState(s, msg) {
+  ['st-ld','st-er','dash'].forEach(function(id){ document.getElementById(id).classList.add('hidden'); });
+  if (s==='load') document.getElementById('st-ld').classList.remove('hidden');
+  else if (s==='err') { document.getElementById('st-er').classList.remove('hidden'); document.getElementById('er-msg').textContent = msg||''; }
+  else document.getElementById('dash').classList.remove('hidden');
+}
+
+// ══════════════════════════════════════════════════════
+// FILTROS
+// ══════════════════════════════════════════════════════
+function populateF() {
+  function uniq(a) { return [...new Set(a.filter(Boolean))].sort(); }
+  // Popula construtoras com todos os dados
+  fillSel('f-con', uniq(RAW.map(function(r){return r.construtora;})), 'Todas');
+  // Empreendimentos e cidades começam com todos
+  updateDependentFilters();
+}
+
+// Atualiza os filtros de empreendimento e cidade baseado na construtora e cidade selecionadas
+function updateDependentFilters() {
+  function uniq(a) { return [...new Set(a.filter(Boolean))].sort(); }
+  var fc  = document.getElementById('f-con').value;
+  var fci = document.getElementById('f-cid').value;
+
+  // Filtra a base para os selects dependentes
+  var base = RAW.filter(function(r){
+    if (fc  && r.construtora !== fc)  return false;
+    if (fci && r.cidade      !== fci) return false;
+    return true;
+  });
+
+  // Guarda valor atual antes de repopular
+  var empAtual = document.getElementById('f-emp').value;
+  var cidAtual = document.getElementById('f-cid').value;
+
+  // Repopula empreendimentos filtrados pela construtora+cidade selecionadas
+  fillSel('f-emp', uniq(base.map(function(r){return r.empreendimento;})), 'Todos');
+  // Restaura valor se ainda existir
+  if (empAtual) {
+    var sel = document.getElementById('f-emp');
+    for (var i=0; i<sel.options.length; i++) {
+      if (sel.options[i].value === empAtual) { sel.value = empAtual; break; }
+    }
+  }
+
+  // Repopula cidades filtradas pela construtora selecionada
+  var baseParaCidade = RAW.filter(function(r){
+    if (fc && r.construtora !== fc) return false;
+    return true;
+  });
+  fillSel('f-cid', uniq(baseParaCidade.map(function(r){return r.cidade;})), 'Todas');
+  if (cidAtual) {
+    var selC = document.getElementById('f-cid');
+    for (var i=0; i<selC.options.length; i++) {
+      if (selC.options[i].value === cidAtual) { selC.value = cidAtual; break; }
+    }
+  }
+}
+
+function fillSel(id, opts, ph) {
+  var s = document.getElementById(id);
+  s.innerHTML = '<option value="">' + ph + '</option>' +
+    opts.map(function(o){ return '<option value="'+xe(o)+'">'+xe(o)+'</option>'; }).join('');
+  // Construtora atualiza os filtros dependentes antes de aplicar
+  if (id === 'f-con' || id === 'f-cid') {
+    s.onchange = function() { updateDependentFilters(); applyF(); };
+  } else {
+    s.onchange = applyF;
+  }
+}
+function adjustRange() {
+  var mn = 0, mx = 120;
+  ['r-mn','r-mx'].forEach(function(id,i){
+    var el = document.getElementById(id);
+    el.min=mn; el.max=mx; el.value=i===0?mn:mx;
+  });
+  document.getElementById('v-mn').textContent = mn+' m²';
+  document.getElementById('v-mx').textContent = mx+' m²';
+}
+function rl(rid,lid){ document.getElementById(lid).textContent = document.getElementById(rid).value+' m²'; }
+function applyF() {
+  var fc  = document.getElementById('f-con').value;
+  var fe  = document.getElementById('f-emp').value;
+  var fci = document.getElementById('f-cid').value;
+  var amn = parseFloat(document.getElementById('r-mn').value)||0;
+  var amx = parseFloat(document.getElementById('r-mx').value)||120;
+  var areaAtiva = amn > 0 || amx < 120;
+  FIL = RAW.filter(function(r){
+    if (fc  && r.construtora    !== fc)  return false;
+    if (fe  && r.empreendimento !== fe)  return false;
+    if (fci && r.cidade         !== fci) return false;
+    if (areaAtiva) {
+      if (r.area_min !== null && r.area_min > amx) return false;
+      if (r.area_max !== null && r.area_max < amn) return false;
+    }
+    return true;
+  });
+  renderAll();
+}
+function clearF() {
+  ['f-con','f-emp','f-cid'].forEach(function(id){ document.getElementById(id).value=''; });
+  updateDependentFilters();
+  adjustRange(); FIL=RAW.slice(); renderAll();
+}
+
+// ══════════════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════════════
+function renderAll(){ renderKPIs(); renderCharts(); renderIns(); renderTable(); }
+
+function renderKPIs() {
+  var d=FIL;
+  var tU=d.reduce(function(s,r){return s+(r.total_unidades||0);},0);
+  var cS=new Set(d.map(function(r){return r.construtora;})).size;
+  var ciS=new Set(d.map(function(r){return r.cidade;}).filter(Boolean)).size;
+  var mP=avg(d.map(function(r){return r.pavimentos;}).filter(nn));
+  var mL=avg(d.map(function(r){return r.itens_lazer_num;}).filter(nn));
+  var mU=d.length?tU/d.length:0;
+  var mE=cS?d.length/cS:0;
+  document.getElementById('kgrid').innerHTML=[
+    {i:'🏗️',v:d.length,      l:'Empreendimentos Analisados'},
+    {i:'🏢',v:cS,             l:'Construtoras Analisadas'},
+    {i:'📍',v:ciS,            l:'Cidades Analisadas'},
+    {i:'🏠',v:fmt(tU),        l:'Total de Unidades'},
+    {i:'📐',v:mU.toFixed(0),  l:'Média Unidades / Emprend.'},
+    {i:'🏬',v:mP.toFixed(1),  l:'Média de Pavimentos'},
+    {i:'🎾',v:mL.toFixed(1),  l:'Média de Ítens de Lazer'},
+    {i:'📊',v:mE.toFixed(1),  l:'Média Emprend. / Construtora'},
+  ].map(function(k){
+    return '<div class="kpi"><div class="kico">'+k.i+'</div><div class="kval">'+k.v+'</div><div class="klbl">'+k.l+'</div></div>';
+  }).join('');
+}
+
+// Chart helpers
+function dfl(){
+  return{
+    maintainAspectRatio:false,animation:{duration:450},
+    plugins:{legend:{display:false},tooltip:{backgroundColor:'#0f0f0f',titleColor:'#e84040',bodyColor:'#d0d0d0',padding:10,cornerRadius:6}},
+    scales:{
+      x:{grid:{color:'#f0f0f0'},ticks:{font:{family:"'Inter'",size:11},color:'#8a8a8a'}},
+      y:{grid:{color:'#f0f0f0'},ticks:{font:{family:"'Inter'",size:11},color:'#8a8a8a'}}
+    }
+  };
+}
+function dk(id){if(CR[id]){CR[id].destroy();delete CR[id];}}
+function barC(id,data,horiz){
+  dk(id);var d=dfl();
+  CR[id]=new Chart(document.getElementById(id).getContext('2d'),{
+    type:'bar',data:data,
+    options:Object.assign({},d,{indexAxis:horiz?'y':'x',plugins:Object.assign({},d.plugins,{legend:{display:false}})})
+  });
+}
+function pieC(id,data){
+  dk(id);
+  CR[id]=new Chart(document.getElementById(id).getContext('2d'),{
+    type:'doughnut',data:data,
+    options:{maintainAspectRatio:false,animation:{duration:450},cutout:'52%',
+      plugins:{
+        legend:{display:true,position:'bottom',labels:{font:{family:"'Inter'",size:11},color:'#3d3d3d',padding:12,boxWidth:14}},
+        tooltip:{backgroundColor:'#0f0f0f',titleColor:'#e84040',bodyColor:'#d0d0d0',padding:10,cornerRadius:6}
+      }
+    }
+  });
+}
+function sctC(id,pts){
+  dk(id);var d=dfl();
+  CR[id]=new Chart(document.getElementById(id).getContext('2d'),{
+    type:'scatter',
+    data:{datasets:[{label:'Emprend.',data:pts,backgroundColor:'rgba(204,31,31,.65)',pointRadius:6,pointHoverRadius:8}]},
+    options:Object.assign({},d,{
+      plugins:Object.assign({},d.plugins,{legend:{display:false},
+        tooltip:Object.assign({},d.plugins.tooltip,{callbacks:{label:function(c){return (c.raw.label||'')+' · Pav:'+c.raw.x+' · Unid:'+c.raw.y;}}})
+      }),
+      scales:{
+        x:Object.assign({},d.scales.x,{title:{display:true,text:'Pavimentos',color:'#8a8a8a',font:{size:11}}}),
+        y:Object.assign({},d.scales.y,{title:{display:true,text:'Total de Unidades',color:'#8a8a8a',font:{size:11}}})
+      }
+    })
+  });
+}
+
+function renderCharts(){
+  var d=FIL;
+
+  var bCon=gCnt(d,'construtora'),sCon=top2(bCon,12);
+  barC('c-con',{labels:sCon.map(function(x){return x[0];}),datasets:[{label:'Emprend.',
+    data:sCon.map(function(x){return x[1];}),backgroundColor:CR_REDS.slice(0,sCon.length),borderRadius:4,borderSkipped:false}]},true);
+
+  var bCid=gCnt(d,'cidade'),sCid=top2(bCid,10);
+  barC('c-cid',{labels:sCid.map(function(x){return x[0]||'(sem cidade)';}),datasets:[{label:'Emprend.',
+    data:sCid.map(function(x){return x[1];}),backgroundColor:CR_BLACKS.slice(0,sCid.length),borderRadius:4,borderSkipped:false}]},true);
+
+  var f={'0–100':0,'101–200':0,'201–300':0,'301–400':0,'400+':0};
+  d.forEach(function(r){var u=r.total_unidades;if(u===null)return;
+    if(u<=100)f['0–100']++;else if(u<=200)f['101–200']++;
+    else if(u<=300)f['201–300']++;else if(u<=400)f['301–400']++;else f['400+']++;});
+  pieC('c-prt',{labels:Object.keys(f),datasets:[{data:Object.values(f),
+    backgroundColor:CR_REDS.slice(0,3).concat(CR_BLACKS.slice(1,3)),borderWidth:2,borderColor:'#fff'}]});
+
+  var lz=gAvg(d,'construtora',function(r){return r.itens_lazer_num;}),slz=top2(lz,10);
+  barC('c-laz',{labels:slz.map(function(x){return x[0];}),datasets:[{label:'Lazer',
+    data:slz.map(function(x){return +x[1].toFixed(1);}),backgroundColor:CR_MIXED.slice(0,slz.length),borderRadius:5,borderSkipped:false}]},false);
+
+  sctC('c-sct',d.filter(function(r){return r.pavimentos!==null&&r.total_unidades!==null;})
+    .map(function(r){return{x:r.pavimentos,y:r.total_unidades,label:r.empreendimento};}));
+
+  var tp=gAvg(d,'construtora',function(r){return r.tipologias;}),stp=top2(tp,10);
+  barC('c-tip',{labels:stp.map(function(x){return x[0];}),datasets:[{label:'Tipologias',
+    data:stp.map(function(x){return +x[1].toFixed(1);}),backgroundColor:CR_BLACKS.slice(0,stp.length),borderRadius:5,borderSkipped:false}]},false);
+
+  var un=gAvg(d,'construtora',function(r){return r.total_unidades;}),sun=top2(un,10);
+  barC('c-uni',{labels:sun.map(function(x){return x[0];}),datasets:[{label:'Unidades',
+    data:sun.map(function(x){return +x[1].toFixed(0);}),backgroundColor:CR_REDS.slice(0,sun.length),borderRadius:5,borderSkipped:false}]},false);
+}
+
+// ══════════════════════════════════════════════════════
+// INSIGHTS
+// ══════════════════════════════════════════════════════
+function renderIns(){
+  var d=FIL;
+  if(!d.length){document.getElementById('igrid').innerHTML='<p style="color:var(--gray-mid);font-size:.82rem">Sem dados para os filtros selecionados.</p>';return;}
+  var ins=[];
+
+  var bCon=gCnt(d,'construtora'),tCon=topE(bCon);
+  if(tCon) ins.push({i:'🏆',dk:false,k:'Construtora em Destaque',t:tCon[0],
+    b:'Lidera com <strong>'+tCon[1]+'</strong> empreendimento(s) na amostra.'});
+
+  var aU=gAvg(d,'construtora',function(r){return r.total_unidades;}),tU=topE(aU);
+  if(tU) ins.push({i:'📈',dk:true,k:'Maior Escala por Empreendimento',t:tU[0],
+    b:'Média de <strong>'+tU[1].toFixed(0)+' unidades</strong> por empreendimento.'});
+
+  var bCid=gCnt(d,'cidade'),tCid=topE(bCid);
+  if(tCid) ins.push({i:'📍',dk:false,k:'Praça com Maior Potencial',t:tCid[0]||'—',
+    b:'<strong>'+tCid[1]+'</strong> empreendimento(s) analisado(s) — mercado aquecido.'});
+
+  var lz=gAvg(d,'construtora',function(r){return r.itens_lazer_num;}),tLz=topE(lz);
+  if(tLz&&tLz[1]>0) ins.push({i:'🎾',dk:true,k:'Liderança em Lazer',t:tLz[0],
+    b:'Média de <strong>'+tLz[1].toFixed(1)+' ítens</strong> de lazer por empreendimento.'});
+
+  var bigE=d.filter(function(r){return r.total_unidades;}).sort(function(a,b){return b.total_unidades-a.total_unidades;})[0];
+  if(bigE) ins.push({i:'🏗️',dk:false,k:'Maior Empreendimento',t:bigE.empreendimento,
+    b:'De <strong>'+bigE.construtora+'</strong> em <strong>'+bigE.cidade+'</strong> · <strong>'+fmt(bigE.total_unidades)+' unidades</strong>.'});
+
+  var gN=d.filter(function(r){return r.garden;}).length,gP=d.length?(gN/d.length*100):0;
+  ins.push({i:'🌿',dk:true,k:'Diferencial Garden',t:gP.toFixed(0)+'% têm Garden Privativo',
+    b:gN+' de '+d.length+' empreendimentos com garden privativo.'});
+
+  var mPav=avg(d.map(function(r){return r.pavimentos;}).filter(nn));
+  if(mPav>0) ins.push({i:'🏬',dk:false,k:'Verticalização do Mercado',t:'Média de '+mPav.toFixed(1)+' Pavimentos',
+    b:'Padrão de verticalização da amostra analisada.'});
+
+  // Linha de produto mais comum
+  var bLinha=gCnt(d,'linha_produto'),tLinha=topE(bLinha);
+  if(tLinha&&tLinha[0]!=='(sem valor)') ins.push({i:'🏷️',dk:true,k:'Linha de Produto Dominante',t:tLinha[0],
+    b:'Presente em <strong>'+tLinha[1]+'</strong> empreendimento(s) da amostra.'});
+
+  document.getElementById('igrid').innerHTML=ins.map(function(n){
+    return '<div class="ic"><div class="ii'+(n.dk?' dk':'')+'">'+n.i+'</div>'+
+      '<div><div class="ik">'+n.k+'</div><div class="it">'+n.t+'</div><div class="ib">'+n.b+'</div></div></div>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// TABELA
+// ══════════════════════════════════════════════════════
+function renderTable(){
+  var d=FIL;
+  document.getElementById('tcnt').textContent=d.length+' registro(s)';
+  document.getElementById('tbody').innerHTML=d.map(function(r){
+    var area=r.area_min!==null?r.area_min+(r.area_max&&r.area_max!==r.area_min?'–'+r.area_max:'')+' m²':'—';
+    var dorms=r.dorm_min!==null?r.dorm_min+(r.dorm_max&&r.dorm_max!==r.dorm_min?'–'+r.dorm_max:''):'—';
+    return '<tr>'+
+      '<td title="'+xe(r.construtora)+'">'+xe(r.construtora)+'</td>'+
+      '<td title="'+xe(r.empreendimento)+'">'+xe(r.empreendimento)+'</td>'+
+      '<td>'+xe([r.cidade,r.estado].filter(Boolean).join(' / '))+'</td>'+
+      '<td>'+dorms+'</td>'+
+      '<td><span class="tag '+(r.suites?'ty':'tn')+'">'+(r.suites?'Sim':'Não')+'</span></td>'+
+      '<td><span class="tag '+(r.vagas?'ty':'tn')+'">'+(r.vagas?'Sim':'Não')+'</span></td>'+
+      '<td><span class="tag '+(r.garden?'ty':'tn')+'">'+(r.garden?'Sim':'Não')+'</span></td>'+
+      '<td>'+area+'</td>'+
+      '<td>'+(r.total_unidades!==null?fmt(r.total_unidades):'—')+'</td>'+
+      '<td>'+(r.torres!==null?r.torres:'—')+'</td>'+
+      '<td>'+(r.pavimentos!==null?r.pavimentos:'—')+'</td>'+
+      '<td><span class="tag '+(r.elevadores?'ty':'tn')+'">'+(r.elevadores?'Sim':'Não')+'</span></td>'+
+      '<td>'+(r.tipologias!==null?r.tipologias:'—')+'</td>'+
+      '<td>'+(r.itens_lazer_num!==null?r.itens_lazer_num:'—')+'</td>'+
+      '<td title="'+xe(r.linha_produto)+'">'+xe(r.linha_produto||'—')+'</td>'+
+      '<td class="lk">'+(r.link?'<a href="'+xe(r.link)+'" target="_blank" rel="noopener">🔗 Ver</a>':'—')+'</td>'+
+    '</tr>';
+  }).join('')||'<tr><td colspan="16" style="text-align:center;color:var(--gray-mid);padding:2rem">Nenhum registro.</td></tr>';
+}
+
+// ══════════════════════════════════════════════════════
+// UTILITÁRIOS
+// ══════════════════════════════════════════════════════
+function xe(s){return String(s).replace(/[&<>"']/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});}
+function fmt(n){return Number(n).toLocaleString('pt-BR');}
+function nn(v){return v!==null&&v!==undefined&&!isNaN(v);}
+function avg(a){return a.length?a.reduce(function(s,v){return s+v;},0)/a.length:0;}
+function gCnt(data,key){return data.reduce(function(a,r){var k=r[key]||'(sem valor)';a[k]=(a[k]||0)+1;return a;},{});}
+function gAvg(data,gk,fn){
+  var s={},c={};
+  data.forEach(function(r){var k=r[gk]||'(sem valor)',v=fn(r);if(v===null||v===undefined||isNaN(v))return;s[k]=(s[k]||0)+v;c[k]=(c[k]||0)+1;});
+  var res={};Object.keys(s).forEach(function(k){res[k]=s[k]/c[k];});return res;
+}
+function topE(obj){var e=Object.entries(obj);if(!e.length)return null;return e.reduce(function(a,b){return b[1]>a[1]?b:a;});}
+function top2(obj,n){return Object.entries(obj).sort(function(a,b){return b[1]-a[1];}).slice(0,n||12);}
+
+document.addEventListener('DOMContentLoaded',function(){loadData();});
+</script>
+</body>
+</html>
